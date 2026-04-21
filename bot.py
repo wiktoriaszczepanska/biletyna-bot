@@ -7,12 +7,12 @@ from bs4 import BeautifulSoup
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 URL = "https://biletyna.pl/inne/Dancing-with-the-Stars-Taniec-z-Gwiazdami"
-TELEGRAM_TOKEN = os.environ.get("8604587380:AAF5iqAi6oFJl6_YjDGVjk-dLMsItL0XnK4")
-TELEGRAM_CHAT_ID = os.environ.get("7148066522")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 def send_telegram(message):
-    url = f"https://api.telegram.org/bot{8604587380:AAF5iqAi6oFJl6_YjDGVjk-dLMsItL0XnK4}/sendMessage"
-    requests.post(url, data={"chat_id": 7148066522, "text": message})
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": message})
 
 def check_tickets():
     print(f"[CHECK] Sprawdzam... {time.strftime('%H:%M:%S')}")
