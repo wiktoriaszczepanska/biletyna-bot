@@ -2,7 +2,8 @@ import time
 import re
 import os
 import requests
-from playwright.sync_api import sync_playwright
+import cloudscraper
+from bs4 import BeautifulSoup
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 URL = "https://biletyna.pl/inne/Dancing-with-the-Stars-Taniec-z-Gwiazdami"
@@ -16,20 +17,26 @@ def send_telegram(message):
 def check_tickets():
     print(f"[CHECK] Sprawdzam... {time.strftime('%H:%M:%S')}")
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto(URL, wait_until="networkidle", timeout=30000)
-            tab = page.locator('a[href="#onsale"]').first
-            tab_text = tab.inner_text()
-            print(f"[CHECK] Zakładka: {tab_text}")
-            match = re.search(r'\((\d+)\)', tab_text)
-            count = int(match.group(1)) if match else 0
-            browser.close()
-            if count > 0:
-                send_telegram(f"🎟️ BILETY DOSTĘPNE!\nTaniec z Gwiazdami — {count} wydarzenie(a) w sprzedaży!\n\n{URL}")
-            else:
-                print("[CHECK] Brak biletów.")
+        scraper = cloudscraper.create_scraper()
+        response = scraper.get(URL, timeout=30)
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        tab = soup.find("a", href="#onsale")
+        if not tab:
+            print("[ERROR] Nie znaleziono zakładki #onsale")
+            return
+
+        tab_text = tab.get_text()
+        print(f"[CHECK] Zakładka: {tab_text}")
+
+        match = re.search(r'\((\d+)\)', tab_text)
+        count = int(match.group(1)) if match else 0
+
+        if count > 0:
+            send_telegram(f"🎟️ BILETY DOSTĘPNE!\nTaniec z Gwiazdami — {count} wydarzenie(a) w sprzedaży!\n\n{URL}")
+        else:
+            print("[CHECK] Brak biletów.")
+
     except Exception as e:
         print(f"[ERROR] {e}")
 
