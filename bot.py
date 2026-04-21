@@ -7,11 +7,11 @@ from bs4 import BeautifulSoup
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 URL = "https://biletyna.pl/inne/Dancing-with-the-Stars-Taniec-z-Gwiazdami"
-TELEGRAM_TOKEN = os.environ.get("8604587380:AAGTTgvaIqFd_Ho2uub0-FlQ1X4ifF61OjU")
+TELEGRAM_TOKEN = os.environ.get("8604587380:AAF5iqAi6oFJl6_YjDGVjk-dLMsItL0XnK4")
 TELEGRAM_CHAT_ID = os.environ.get("7148066522")
 
 def send_telegram(message):
-    url = f"https://api.telegram.org/bot{8604587380:AAGTTgvaIqFd_Ho2uub0-FlQ1X4ifF61OjU}/sendMessage"
+    url = f"https://api.telegram.org/bot{8604587380:AAF5iqAi6oFJl6_YjDGVjk-dLMsItL0XnK4}/sendMessage"
     requests.post(url, data={"chat_id": 7148066522, "text": message})
 
 def check_tickets():
@@ -20,23 +20,18 @@ def check_tickets():
         scraper = cloudscraper.create_scraper()
         response = scraper.get(URL, timeout=30)
         soup = BeautifulSoup(response.text, "html.parser")
-
         tab = soup.find("a", href="#onsale")
         if not tab:
             print("[ERROR] Nie znaleziono zakładki #onsale")
             return
-
         tab_text = tab.get_text()
         print(f"[CHECK] Zakładka: {tab_text}")
-
         match = re.search(r'\((\d+)\)', tab_text)
         count = int(match.group(1)) if match else 0
-
         if count > 0:
             send_telegram(f"🎟️ BILETY DOSTĘPNE!\nTaniec z Gwiazdami — {count} wydarzenie(a) w sprzedaży!\n\n{URL}")
         else:
             print("[CHECK] Brak biletów.")
-
     except Exception as e:
         print(f"[ERROR] {e}")
 
