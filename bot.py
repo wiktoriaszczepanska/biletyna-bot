@@ -54,5 +54,5 @@ if __name__ == "__main__":
     print("Bot uruchomiony. Sprawdza co 60 minut.", flush=True)
     check_tickets()
     scheduler = BlockingScheduler()
-    scheduler.add_job(check_tickets, "interval", minutes=60)
+    scheduler.add_job(check_tickets, "interval", minutes=10)
     scheduler.start()
