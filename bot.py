@@ -2,19 +2,11 @@ import time
 import re
 import os
 import requests
-import cloudscraper
-from bs4 import BeautifulSoup
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-URL = "https://biletyna.pl/inne/Dancing-with-the-Stars-Taniec-z-Gwiazdami"
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept-Language": "pl-PL,pl;q=0.9",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-}
+URL_PAGE = "https://biletyna.pl/inne/Dancing-with-the-Stars-Taniec-z-Gwiazdami"
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -23,26 +15,31 @@ def send_telegram(message):
 def check_tickets():
     print(f"[CHECK] Sprawdzam... {time.strftime('%H:%M:%S')}", flush=True)
     try:
-        scraper = cloudscraper.create_scraper(interpreter='native')
-        response = scraper.get(URL, headers=HEADERS, timeout=30)
-        soup = BeautifulSoup(response.text, "html.parser")
-        tab = soup.find("a", href="#onsale")
-        if not tab:
-            print("[ERROR] Nie znaleziono zakładki #onsale", flush=True)
-            return
-        tab_text = tab.get_text()
-        print(f"[CHECK] Zakładka: {tab_text}", flush=True)
-        match = re.search(r'\((\d+)\)', tab_text)
-        count = int(match.group(1)) if match else 0
-        if count > 0:
-            send_telegram(f"🎟️ BILETY DOSTĘPNE!\nTaniec z Gwiazdami — {count} wydarzenie(a) w sprzedaży!\n\n{URL}")
+        # Szukamy wydarzeń przez API biletyny
+        response = requests.get(
+            "https://biletyna.pl/api/v1/events",
+            params={"q": "Taniec z Gwiazdami", "status": "onsale"},
+            headers={"Accept": "application/json"},
+            timeout=30
+        )
+        print(f"[CHECK] Status: {response.status_code}", flush=True)
+        
+        if response.status_code == 200:
+            data = response.json()
+            count = len(data.get("events", data if isinstance(data, list) else []))
+            print(f"[CHECK] Znaleziono: {count}", flush=True)
+            if count > 0:
+                send_telegram(f"🎟️ BILETY DOSTĘPNE!\nTaniec z Gwiazdami — {count} wydarzenie(a) w sprzedaży!\n\n{URL_PAGE}")
+            else:
+                print("[CHECK] Brak biletów.", flush=True)
         else:
-            print("[CHECK] Brak biletów.", flush=True)
+            print(f"[CHECK] Odpowiedź: {response.text[:200]}", flush=True)
+
     except Exception as e:
         print(f"[ERROR] {e}", flush=True)
 
 if __name__ == "__main__":
-    print("Bot uruchomiony. Sprawdza co 60 sekund.", flush=True)
+    print("Bot uruchomiony. Sprawdza co 3 minuty.", flush=True)
     check_tickets()
     scheduler = BlockingScheduler()
     scheduler.add_job(check_tickets, "interval", seconds=180)
