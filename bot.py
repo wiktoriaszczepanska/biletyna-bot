@@ -28,7 +28,9 @@ def check_tickets():
     try:
         scraper = cloudscraper.create_scraper()
         response = scraper.get(URL, headers=HEADERS, timeout=30)
+        print(f"[CHECK] Status: {response.status_code}", flush=True)
         html = response.text
+        print(f"[DEBUG] Fragment: {html[1000:1500]}", flush=True)
         del response
         scraper.close()
         del scraper
