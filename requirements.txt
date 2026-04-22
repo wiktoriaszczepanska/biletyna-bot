@@ -1,4 +1,4 @@
-curl_cffi
+cloudscraper
 beautifulsoup4
 apscheduler
 requests
