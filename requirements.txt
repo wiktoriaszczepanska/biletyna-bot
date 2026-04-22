@@ -1,4 +1,4 @@
-requests
-cloudscraper
+curl_cffi
 beautifulsoup4
 apscheduler
+requests
