@@ -3,18 +3,13 @@ import re
 import os
 import gc
 import requests
-import cloudscraper
 from bs4 import BeautifulSoup
+from curl_cffi import requests as cf_requests
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 URL = "https://biletyna.pl/inne/Dancing-with-the-Stars-Taniec-z-Gwiazdami"
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept-Language": "pl-PL,pl;q=0.9",
-}
 
 def send_telegram(message):
     requests.post(
@@ -24,15 +19,13 @@ def send_telegram(message):
 
 def check_tickets():
     print(f"[CHECK] Sprawdzam... {time.strftime('%H:%M:%S')}", flush=True)
-    scraper = None
     try:
-        scraper = cloudscraper.create_scraper(interpreter='native')
-        response = scraper.get(URL, headers=HEADERS, timeout=30)
+        response = cf_requests.get(URL, impersonate="chrome120", timeout=30)
+        print(f"[CHECK] Status: {response.status_code}", flush=True)
         soup = BeautifulSoup(response.text, "html.parser")
-        
-        # Zwolnij pamięć od razu
         del response
-        
+        gc.collect()
+
         tab = soup.find("a", href="#onsale")
         if not tab:
             print("[ERROR] Nie znaleziono zakładki #onsale", flush=True)
@@ -51,8 +44,7 @@ def check_tickets():
     except Exception as e:
         print(f"[ERROR] {e}", flush=True)
     finally:
-        del scraper
-        gc.collect()  # wymuś zwolnienie pamięci
+        gc.collect()
 
 if __name__ == "__main__":
     print("Bot uruchomiony. Sprawdza co 3 minuty.", flush=True)
