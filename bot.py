@@ -2,6 +2,7 @@ import time
 import re
 import os
 import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -22,7 +23,8 @@ def send_telegram(message):
 def check_tickets():
     print(f"[CHECK] Sprawdzam... {time.strftime('%H:%M:%S')}", flush=True)
     try:
-        response = requests.get(URL, headers=HEADERS, timeout=30)
+        scraper = cloudscraper.create_scraper(interpreter='native')
+        response = scraper.get(URL, headers=HEADERS, timeout=30)
         soup = BeautifulSoup(response.text, "html.parser")
         tab = soup.find("a", href="#onsale")
         if not tab:
@@ -43,5 +45,5 @@ if __name__ == "__main__":
     print("Bot uruchomiony. Sprawdza co 60 sekund.", flush=True)
     check_tickets()
     scheduler = BlockingScheduler()
-    scheduler.add_job(check_tickets, "interval", seconds=60)
+    scheduler.add_job(check_tickets, "interval", seconds=180)
     scheduler.start()
